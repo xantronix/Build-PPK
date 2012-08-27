@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+
+# cpanel - scripts/ppk-deptool                    Copyright(c) 2012 cPanel, Inc.
+#                                                           All rights Reserved.
+# copyright@cpanel.net                                         http://cpanel.net
+# This code is subject to the cPanel license. Unauthorized copying is prohibited
+
+use strict;
+use warnings;
+
+use App::PPK::Deptool;
+
+App::PPK::Deptool->run(@ARGV);
+
+__END__
+
+=head1 COPYRIGHT
+
+Copyright (c) 2012, cPanel, Inc.  All rights reserved.  This is free software;
+you can redistribute it and/or modify it under the same terms as Perl itself.
+See L<perlartistic> for further details.
