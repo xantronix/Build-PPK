@@ -1,6 +1,6 @@
 package App::PPK::Deptool;
 
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2013, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -72,8 +72,6 @@ sub fetch_dist {
     my %opts;
     my @dists;
 
-    my $dir = $ENV{'PPK_DISTDIR'};
-
     GetOptionsFromArray(
         \@args,
         'force'          => \$opts{'force'},
@@ -94,7 +92,7 @@ sub fetch_dist {
             next unless $opts{'force'};
         }
 
-        my $path = $dir ? "$dir/$dist" : $dist;
+        my $path = $ENV{'PPK_DISTDIR'} ? "$ENV{'PPK_DISTDIR'}/$dist" : $dist;
 
         $deptool->fetch_dist(
             'dist'     => $dist,
@@ -122,16 +120,15 @@ sub list_targets {
 
 sub list_target_deps {
     my ( $deptool, @targets ) = @_;
-    my $dir = $ENV{'PPK_DISTDIR'};
 
     usage('list-target-deps') unless @targets;
 
     my @deps = $deptool->target_deps( 'targets' => \@targets );
 
-    $dir .= '/' if $dir;
-
     foreach my $dep (@deps) {
-        print "${dir}${dep}\n";
+        my $path = $ENV{'PPK_DISTDIR'} ? "$ENV{'PPK_DISTDIR'}/$dep" : $dep;
+
+        print "$path\n";
     }
 
     return 0;
