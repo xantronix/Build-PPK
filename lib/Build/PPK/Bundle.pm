@@ -1,6 +1,6 @@
 package Build::PPK::Bundle;
 
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2013, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -86,7 +86,7 @@ sub libdirs {
 sub check {
     my ($self) = @_;
 
-    my @dirs = split( /:/, $ENV{'PERLLIB'} );
+    my @dirs = @INC;
     push @dirs, $self->libdirs;
 
     local $ENV{'PERLLIB'} = join( ':', @dirs );
