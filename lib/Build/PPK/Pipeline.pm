@@ -1,6 +1,6 @@
 package Build::PPK::Pipeline;
 
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2013, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -56,9 +56,14 @@ sub close {
     close $self->{'out'};
     close $self->{'err'};
 
+    my %statuses;
+
     foreach my $pid ( @{ $self->{'pids'} } ) {
         waitpid( $pid, 0 );
+        $statuses{$pid} = $? >> 8;
     }
+
+    return \%statuses;
 }
 
 1;
