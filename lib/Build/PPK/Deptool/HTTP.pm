@@ -1,6 +1,6 @@
 package Build::PPK::Deptool::HTTP;
 
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2013, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -18,38 +18,47 @@ use File::Basename ();
 
 use Build::PPK::Pipeline ();
 
-use Carp;
+use Carp ();
 
 sub fetch_dist {
     my ( $class, %args ) = @_;
 
+    die('No URL specified')         unless $args{'url'};
+    die('No output path specified') unless $args{'path'};
+
     return if -e $args{'path'};
+
+    my $tmpfile;
 
     my @filters = (
         sub {
-            exec qw(wget -O -), $args{'url'} or confess("Unable to spawn wget: $!");
+            exec qw(wget -O -), $args{'url'} or Carp::confess("Unable to spawn wget: $!");
         }
     );
 
     if ( $args{'path'} =~ /\.tar/ ) {
+        $tmpfile = "$args{'path'}.tmp";
+
         push @filters, sub {
-            open( my $fh, '>', $args{'path'} ) or confess("Cannot open $args{'path'} for writing: $!");
+            open( my $fh, '>', $tmpfile ) or Carp::confess("Cannot open $tmpfile for writing: $!");
 
             while ( my $len = read( STDIN, my $buf, 4096 ) ) {
                 print $fh $buf;
             }
 
             close $fh;
+
+            exit 0;
         };
     }
     else {
         unless ( -d $args{'path'} ) {
-            mkdir( $args{'path'} ) or confess("Unable to create distribution directory $args{'path'} : $!");
+            mkdir( $args{'path'} ) or Carp::confess("Unable to create distribution directory $args{'path'} : $!");
         }
 
         push @filters, sub {
-            chdir( $args{'path'} ) or confess("Unable to chdir() to $args{'path'}: $!");
-            exec qw(tar pzxf -) or confess("Unable to spawn tar: $!");
+            chdir( $args{'path'} ) or Carp::confess("Unable to chdir() to $args{'path'}: $!");
+            exec qw(tar pzxf -) or Carp::confess("Unable to spawn tar: $!");
         };
     }
 
@@ -57,12 +66,45 @@ sub fetch_dist {
 
     close $pipeline->{'in'};
 
-    sysopen( my $null_fh, '/dev/null', &Fcntl::O_RDONLY ) or confess("Unable to open /dev/null: $!");
+    sysopen( my $null_fh, '/dev/null', &Fcntl::O_RDONLY ) or Carp::confess("Unable to open /dev/null: $!");
 
     POSIX::dup2( fileno($null_fh), fileno( $pipeline->{'out'} ) );
-    POSIX::dup2( fileno($null_fh), fileno( $pipeline->{'err'} ) );
 
-    $pipeline->close;
+    my $stderr;
+
+    while ( my $len = sysread( $pipeline->{'err'}, my $buf, 512 ) ) {
+        $stderr .= $buf;
+    }
+
+    my $statuses = $pipeline->close;
+    my $errors;
+
+    foreach my $pid ( keys %{$statuses} ) {
+        my $status = $statuses->{$pid};
+
+        next unless $status != 0;
+
+        if ($stderr) {
+            chomp $stderr;
+            $errors = "Process $pid died with nonzero exit status $status: $stderr";
+        }
+        else {
+            $errors = "Process $pid died with nonzero exit status $status";
+        }
+    }
+
+    if ($errors) {
+        unlink($tmpfile) if $tmpfile;
+        die($errors);
+    }
+
+    if ($tmpfile) {
+        unless ( rename( $tmpfile => $args{'path'} ) ) {
+            die("Unable to rename temporary file $tmpfile to $args{'path'}: $!");
+        }
+    }
+
+    return;
 }
 
 1;
