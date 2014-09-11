@@ -24,7 +24,7 @@ COPYRIGHT
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
-README
+README.md
 scripts/ppk
 scripts/ppk-deptool
 share/stub.pl

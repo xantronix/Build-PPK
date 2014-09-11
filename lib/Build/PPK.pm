@@ -25,12 +25,12 @@ BEGIN {
     use Exporter ();
     use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
-    $VERSION = '0.02';
-    @ISA     = qw(Exporter);
+    our $VERSION = '0.03';
+    our @ISA     = qw(Exporter);
 
-    @EXPORT      = ();
-    @EXPORT_OK   = ();
-    %EXPORT_TAGS = ();
+    our @EXPORT      = ();
+    our @EXPORT_OK   = ();
+    our %EXPORT_TAGS = ();
 }
 
 sub build {

@@ -13,10 +13,12 @@ use warnings;
 use Fcntl        ();
 use MIME::Base64 ();
 
-use Filesys::POSIX             ();
-use Filesys::POSIX::IO::Handle ();
-use Filesys::POSIX::Mem        ();
-use Filesys::POSIX::Path       ();
+use Filesys::POSIX                ();
+use Filesys::POSIX::IO::Handle    ();
+use Filesys::POSIX::Mem           ();
+use Filesys::POSIX::Path          ();
+use Filesys::POSIX::Extensions    ();
+use Filesys::POSIX::Userland::Tar ();
 
 use Build::PPK::Exec     ();
 use Build::PPK::Pipeline ();
@@ -105,9 +107,6 @@ sub prepare {
         Filesys::POSIX::Mem->new,
         'noatime' => 1
     );
-
-    $fs->import_module('Filesys::POSIX::Extensions');
-    $fs->import_module('Filesys::POSIX::Userland::Tar');
 
     foreach my $dir (qw(lib scripts)) {
         $fs->mkdir($dir);

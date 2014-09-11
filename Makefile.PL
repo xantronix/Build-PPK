@@ -2,7 +2,7 @@ use inc::Module::Install;
 
 name           'Build-PPK';
 version_from   'lib/Build/PPK.pm';
-author         'Erin Schoenhals <erin@cpanel.net>';
+author         'Xan Tronix <xan@cpan.org>';
 abstract       'Generate self-contained Perl scripts';
 license        'perl';
 requires       'Filesys::POSIX' => '0.009';
