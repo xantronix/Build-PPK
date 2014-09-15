@@ -50,6 +50,8 @@ sub fetch_dist {
     my ( $self, %args ) = @_;
     my $url = $self->{'dist_index'}->{ $args{'dist'} }->[0];
 
+    die("Could not find URL for dependency $args{'dist'}") unless $url;
+
     my %HANDLERS = (
         qr(^git://) => sub {
             require Build::PPK::Deptool::Git;
