@@ -3,24 +3,45 @@ use warnings;
 
 use POSIX        ();
 use File::Temp   ();
-use File::Find   ();
 use MIME::Base64 ();
 
-sub extract {
+sub exec_tar {
+    my (@args) = @_;
+
+    my @PATH     = qw(/usr/local/bin /usr/bin /bin);
+    my @COMMANDS = qw(gtar tar bsdtar);
+
+    foreach my $command (@COMMANDS) {
+        foreach my $dir (@PATH) {
+            my $file = "$dir/$command";
+
+            if ( -x $file ) {
+                exec( $file, @args ) or die("Unable to exec() $command: $!");
+            }
+        }
+    }
+
+    die( 'Could not locate tar binary in ' . join( ':', @PATH ) );
+}
+
+sub extract_to {
     my ($tmpdir) = @_;
 
     pipe my ( $out, $in ) or die("Unable to pipe(): $!");
+
     my $pid = fork();
 
-    if ( $pid == 0 ) {
+    if ( !defined $pid ) {
+        die("Unable to fork(): $!");
+    }
+    elsif ( $pid == 0 ) {
         close $in;
+
         POSIX::dup2( fileno($out), fileno(STDIN) ) or die("Unable to dup2(): $!");
 
-        chdir($tmpdir) or die("Unable to chdir() to $tmpdir: $!");
-        exec qw(tar mpzxf -) or die("Unable to exec(): $!");
-    }
-    elsif ( !defined($pid) ) {
-        die("Unable to fork(): $!");
+        chdir $tmpdir or die("Unable to chdir() to $tmpdir: $!");
+
+        exec_tar( 'mpzxf', '-' );
     }
 
     close $out;
@@ -32,7 +53,12 @@ sub extract {
     }
 
     close $in;
-    waitpid $pid, 0;
+
+    waitpid( $pid, 0 );
+
+    my $status = $? >> 8;
+
+    return $status == 0;
 }
 
 sub run {
@@ -43,9 +69,9 @@ sub run {
     my $pid = fork();
 
     if ( $pid == 0 ) {
-        $ENV{'PERLLIB'} ||= '.';
         $ENV{'PERLLIB'} = "$lib:$ENV{'PERLLIB'}";
-        exec $^X, $main, @args or die("Unable to exec() $main: $!");
+
+        exec( $^X, $main, @args ) or die("Unable to exec() $main: $!");
     }
     elsif ( !defined($pid) ) {
         die("Unable to fork(): $!");
@@ -53,38 +79,13 @@ sub run {
 
     waitpid( $pid, 0 );
 
-    return $?;
+    return $? >> 8;
 }
 
-sub cleanup {
-    my (@dirs) = @_;
+my $tmpdir = File::Temp::tempdir( 'CLEANUP' => 1 ) or die("Cannot create temporary directory: $!");
 
-    File::Find::finddepth(
-        {
-            'no_chdir' => 1,
-            'wanted'   => sub {
-                if ( -d $File::Find::name ) {
-                    rmdir $File::Find::name;
-                }
-                else {
-                    unlink $File::Find::name;
-                }
-              }
-        },
-        @dirs
-    );
-}
+extract_to($tmpdir) or die("Unable to extract to $tmpdir");
 
-my $tmpdir = File::Temp::mkdtemp('/tmp/.perl-ppk-XXXXXX') or die("Cannot create temporary directory: $!");
-
-$SIG{'INT'} = sub {
-    cleanup($tmpdir);
-};
-
-extract($tmpdir);
-run( $tmpdir, @ARGV );
-cleanup($tmpdir);
-
-exit $?;
+exit run( $tmpdir, @ARGV );
 
 __DATA__
