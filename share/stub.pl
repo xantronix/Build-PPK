@@ -69,8 +69,9 @@ sub run {
     my $pid = fork();
 
     if ( $pid == 0 ) {
-        $ENV{'PERL5LIB'} = $lib;
-        $ENV{'PERL5LIB'} .= ":$ENV{'PERL5LIB'}" if defined $ENV{'PERL5LIB'};
+        $ENV{'PERL5LIB'} = defined $ENV{'PERL5LIB'}?
+            "$lib:$ENV{'PERL5LIB'}":
+            $lib;
 
         exec( $^X, $main, @args ) or die("Unable to exec() $main: $!");
     }
