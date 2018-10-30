@@ -1,4 +1,4 @@
-use inc::Module::Install;
+use inc::Module::Install 1.1;
 
 name           'Build-PPK';
 version_from   'lib/Build/PPK.pm';
@@ -12,4 +12,5 @@ install_share  'share';
 install_script 'scripts/ppk';
 install_script 'scripts/ppk-deptool';
 
+repository 'http://github.com/xantronix/Build-PPK';
 WriteAll;
